@@ -1,4 +1,11 @@
 <launch>
+    <arg name="ip"/>
+    <arg name="serial"/>
+    <arg name="frame_id"/>
     <!-- Load the Micro Epsilon scanCONTROL driver -->
-    <node name="scancontrol_driver" pkg="micro_epsilon_scancontrol_driver" type="driver_node" output="screen" required="true" />
+    <node name="scancontrol_driver" pkg="micro_epsilon_scancontrol_driver" type="driver_node" output="screen" required="true">
+        <param name="ip" value="$(arg ip)"/>
+        <param name="serial" value="$(arg serial)"/>
+        <param name="frame_id" value="$(arg frame_id)"/>
+    </node>
 </launch>

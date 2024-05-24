@@ -13,6 +13,9 @@
 #include <ros/ros.h>
 #include <std_srvs/SetBool.h>
 
+// Include for IP address handling
+#include <arpa/inet.h>
+
 #define MAX_DEVICE_INTERFACE_COUNT 6
 #define MAX_RESOLUTION_COUNT 6
 #define GENERAL_FUNCTION_FAILED -1
@@ -44,14 +47,14 @@ public:
   int SetFeature(unsigned int setting_id, unsigned int value);
 
   // Get configuration parameters
-  std::string serial() const
-  {
-    return config_.serial;
-  };
-  int resolution() const
-  {
-    return config_.resolution;
-  };
+  // std::string serial() const
+  // {
+  //   return config_.serial;
+  // };
+  // int resolution() const
+  // {
+  //   return config_.resolution;
+  // };
 
   // Service Callback
   bool ServiceSetFeature(micro_epsilon_scancontrol_msgs::SetFeature::Request& request,
@@ -78,6 +81,7 @@ private:
     std::string serial;
     std::string interface;
     std::string topic_name;
+    std::string ip_addr;
     int resolution;
     int pp_start_point;
     int pp_start_point_data;

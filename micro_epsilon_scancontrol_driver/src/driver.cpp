@@ -14,10 +14,19 @@ ScanControlDriver::ScanControlDriver(ros::NodeHandle nh, ros::NodeHandle private
   private_nh_.param("resolution", config_.resolution, -1);
 
   // Multiple device parameters
-  private_nh_.param("serial", config_.serial, std::string(""));
+  // Serial number gets recognized as an integer, there is no way to force string dtype to rosparams
+  // So we have to get it as an int and then convert to string
+  int serial_no;
+  private_nh_.param("serial", serial_no, -1);
+  if (serial_no != -1)
+  {
+    config_.serial = std::to_string(serial_no);
+  } else {
+    private_nh_.param("serial", config_.serial, std::string(""));
+  }
+  private_nh_.param("ip_addr", config_.ip_addr, std::string(""));
   private_nh_.param("frame_id", config_.frame_id, std::string(DEFAULT_FRAME_ID));
   private_nh_.param("topic_name", config_.topic_name, std::string(DEFAULT_TOPIC_NAME));
-
   // TODO: Are these parameters needed?
   private_nh_.param("partial_profile_start_point", config_.pp_start_point, 0);
   private_nh_.param("partial_profile_start_point_data", config_.pp_start_point_data, 4);
@@ -30,7 +39,7 @@ ScanControlDriver::ScanControlDriver(ros::NodeHandle nh, ros::NodeHandle private
   /*
       Search for available scanCONTROL interfaces
           The code only supports a maximum of MAX_LLT_INTERFACE_COUNT (6) devices. If
-          more are connected the devices found after the 6th are not considdered. This
+          more are connected the devices found after the 6th are not considered. This
           is a limitation of the API, which needs a fixed number of devices to search
           for. If 6 devices is insufficient, redefine MAX_LLT_INTERFACE_COUNT to
           accomodate the additional devices.
@@ -39,6 +48,26 @@ ScanControlDriver::ScanControlDriver(ros::NodeHandle nh, ros::NodeHandle private
   gint32 interface_count = 0;
   std::vector<char*> available_interfaces(MAX_DEVICE_INTERFACE_COUNT);
 
+  // Get the interface information to match IP address
+  // TODO: This only works to find the first device that the driver finds.
+  sensor_info_t sensor_info;
+  guint32 size = sizeof(sensor_info);
+  const char *host_ip = getenv("ROS_IP");
+  const char *eth_if = NULL;
+  return_code = device_interface_ptr->GetDeviceInfos(host_ip, &sensor_info, size, eth_if);
+  // Convert IP address from binary network byte order to dotted-decimal string
+  char buffer[INET_ADDRSTRLEN];
+  const char* result_ip = inet_ntop(AF_INET, &sensor_info.ip_address, buffer, sizeof(buffer));
+ 
+  // test
+  // char *available_inters[MAX_DEVICE_INTERFACE_COUNT] = {nullptr};
+  // return_code = device_interface_ptr->GetDeviceInterfaces(available_inters, MAX_DEVICE_INTERFACE_COUNT);
+  // for (int i = 0; i < return_code; i++)
+  // {
+  //   ROS_INFO_STREAM("Interface ANIL: " << available_inters[i]);
+  // }
+
+  // Get the interface information
   return_code = device_interface_ptr->GetDeviceInterfaces(&available_interfaces[0], MAX_DEVICE_INTERFACE_COUNT);
   if (return_code == ERROR_GETDEVINTERFACE_REQUEST_COUNT)
   {
@@ -93,14 +122,14 @@ ScanControlDriver::ScanControlDriver(ros::NodeHandle nh, ros::NodeHandle private
       for (int i = 0; i < interface_count; i++)
       {
         std::string interface(available_interfaces[i]);
-        if (interface.find(config_.serial) > -1)
-        {
+        if (interface.find(config_.serial) != std::string::npos) {
           ROS_INFO_STREAM("Interface found: " << interface);
           selected_interface = i;
           break;
         }
       }
-      // Fallback if serial are not found:
+
+      // Fallback if serial is not found:
       if (selected_interface == -1)
       {
         ROS_WARN_STREAM("Interface not found! Searched for serial = " << config_.serial);

@@ -121,7 +121,7 @@ Most servives are wrappers of the scanCONTROL API. For more information on the a
 
 	Flip the X values around the middle of the laser line of the sensor.  
 
-* **`~invert_z`** ([std_srvs/SetBool]
+* **`~invert_z`** ([std_srvs/SetBool])
 
 	Flip the Z values around the middle of the measuring range of the sensor. Factory default value of of this setting is `True`.
 
